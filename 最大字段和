@@ -15,19 +15,17 @@ int main()
 		scanf_s("%d", &a[i]);
 		if (a[i] >= 0) sym = 1;
 	}
-	for (int j = 0; j < n; j++)
-	{
-		if (b < 0)
-			b = a[j];
-		else
-			b += a[j];
-
-		if (sum < b)
-			sum = b;
-	}
 	if (sym == 0)
 		printf("0\n");
 	else
+	{
+		for (int j = 0; j < n; j++)
+		{
+			if (b < 0)  b = a[j];
+			else  b += a[j];
+			if (sum < b)  sum = b;
+		}
 		printf("最大字段和为：%d\n", sum);
+	}
 }
 

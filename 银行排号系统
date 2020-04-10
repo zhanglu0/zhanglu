@@ -1,0 +1,453 @@
+#include <stdio.h>
+#include <malloc.h>
+#include <stdlib.h>
+#include <time.h>
+#define CloseTime 500
+typedef struct Event  //事件类型
+{
+	int OccurTime;
+	int NType;
+} Event, ElemType;
+typedef struct LNode
+{
+	ElemType data;
+	struct LNode *next;
+} LNode, *Link, *Position;
+typedef struct _LinkList
+{
+	Link head, tail;
+	int len;
+} LinkList;
+typedef LinkList EventList;
+typedef struct
+{
+	int ArrivalTime;  //到达时间
+	int Duration;//办理业务时间
+	int num;
+} QElemType;
+typedef struct QNode
+{
+	QElemType data;
+	struct QNode *next;
+}QNode, *QueuePtr;
+typedef struct
+{
+	QueuePtr front,rear;
+}LinkQueue;
+#define Qu 4  //队列数
+#define Khjg 5  //时间间隔最大值
+#define Blsj 15  //办理业务最大值
+EventList ev;
+Event en;
+Event et;
+LinkQueue q[Qu];
+QElemType customer;
+int TotalTime0 = 0,TotalTime1=0,TotalTime2=0,TotalTime3=0;
+int CustomerNum = 0,CustomerNum0=0,CustomerNum1=0,CustomerNum2=0,CustomerNum3=0;
+int a1[50],a2[50],a3[50],a4[50];
+int k1=0,k2=0,k3=0,k4=0;
+
+FILE *fp;
+
+void FreeNode(Link *p)
+{
+	free(*p);
+	*p = NULL;
+}
+int InitList(LinkList *L)  //构建空链表
+{
+	Link p;
+	p = (Link)malloc(sizeof(LNode));
+	if( p )
+	{
+		p->next = NULL;
+		(*L).head = (*L).tail = p;
+		(*L).len = 0;
+		return 1;
+	}
+	else
+		return 0;
+}
+int ClearList(LinkList *L)  //置为空表
+{
+	Link p,q;
+	if((*L).head != (*L).tail)
+	{
+		p = q = (*L).head->next;
+		(*L).head->next = NULL;
+		while(p != (*L).tail)
+		{
+			p = q->next;
+			free(q);
+			q = p;
+		}
+		free(q);
+		(*L).tail = (*L).head;
+		(*L).len = 0;
+	}
+	return 1;
+}
+int DestroyList(LinkList *L)  //删除L链表
+{
+	ClearList(L);
+	FreeNode(&(*L).head);
+	(*L).tail = NULL;
+	(*L).len = 0;
+	return 1;
+}
+int DelFirst(LinkList *L,Link h,Link *q)  //删除链表中的第一个节点
+{
+	*q = h->next;
+	if( *q )
+	{
+		h->next = (*q)->next;
+		if( !h->next )
+			(*L).tail = h;
+		(*L).len--;
+		return 1;
+	}
+	else
+		return 0;
+}
+ElemType GetCurElem(Link p)  //返回p所指节点值
+{
+	return p->data;
+}
+int ListEmpty(LinkList L)  //为空返回1，否则返回0
+{
+	if(L.len)
+		return 0;
+	else
+		return 1;
+}
+Position GetHead(LinkList L)  //返回L中头结点的位置
+{
+	return L.head;
+}
+int OrderInsert(LinkList *L,ElemType e,int (*comp)(ElemType,ElemType))  //将e插入L
+{
+	Link o,p,q;
+	q = (*L).head;
+	p=q->next;
+	while(p!=NULL&&comp(p->data,e)<0)
+	{
+		q=p;
+		p=p->next;
+	}
+	o=(Link)malloc(sizeof(LNode));
+	o->data=e;
+	q->next=o;
+	o->next=p;
+	(*L).len++;
+	if(!p)
+		(*L).tail=o;
+	return 1;
+}
+int InitQueue(LinkQueue *Q)  //构造空队列Q
+{
+	(*Q).front = (*Q).rear = (QueuePtr)malloc(sizeof(QNode));
+	if( !(*Q).front )
+		exit(0);
+	(*Q).front->next = NULL;
+	return 1;
+}
+int DestroyQueue(LinkQueue *Q)  //销毁队列
+{
+	while((*Q).front)
+	{
+		(*Q).rear = (*Q).front->next;
+		free((*Q).front);
+		(*Q).front = (*Q).rear;
+	}
+	return 1;
+}
+int QueueEmpty(LinkQueue Q)  //Q为空返回1，否则返回0
+{
+	if(Q.front == Q.rear)
+		return 1;
+	else
+		return 0;
+}
+int QueueLength(LinkQueue Q)  //求队列长度
+{
+	int i = 0;
+	QueuePtr p;
+	p = Q.front;
+	while(Q.rear != p)
+	{
+		i++;
+		p = p->next;
+	}
+	return i;
+}
+int GetHead_Q(LinkQueue Q,QElemType *e)  //队列不为空用e返回对头返回1，否则返回0
+{
+	QueuePtr p;
+	if(Q.front == Q.rear)
+		return 0;
+	p = Q.front->next;
+	*e = p->data;
+	return 1;
+}
+int EnQueue(LinkQueue *Q,QElemType e)  //插入e为队尾
+{
+	QueuePtr p = (QueuePtr)malloc(sizeof(QNode));
+	if( !p )
+		exit(0);
+	p->data = e;
+	p->next = NULL;
+	(*Q).rear->next = p;
+	(*Q).rear = p;
+	return 1;
+}
+int DeQueue(LinkQueue *Q,QElemType *e)  //队列不为空删除Q的队头元素，用e返回
+{
+	QueuePtr p;
+	if((*Q).front == (*Q).rear)
+		return 0;
+	p = (*Q).front->next;
+	*e = p->data;
+	(*Q).front->next = p->next;
+	if((*Q).rear == p)
+		(*Q).rear = (*Q).front;
+	free(p);
+	return 1;
+}
+int QueueTraverse(LinkQueue Q,void(*vi)(QElemType))
+{
+	QueuePtr p;
+	p = Q.front->next;
+	while( p )
+	{
+		vi(p->data);
+		p = p->next;
+	}
+	printf("\n");
+	return 1;
+}
+int cmp(Event a,Event b)  //比较事件a b发生时刻
+{
+	if(a.OccurTime == b.OccurTime)
+		return 0;
+	else
+		return
+		(a.OccurTime - b.OccurTime) / abs(a.OccurTime - b.OccurTime);
+}
+void OpenForDay()  //初始化
+{
+	int i;
+	InitList( &ev );
+	for(i = 0; i < Qu; ++i)
+		InitQueue( &q[i] );
+	en.OccurTime =0;
+	en.NType = Qu;
+	OrderInsert(&ev, en, cmp);
+    fp=fopen("e:\\bank.txt","w");
+}
+void Random(int *d,int *i)  //产生随机数
+{
+	*d = rand() % Blsj + 1;
+	*i = rand() % Khjg + 1;
+
+	printf("\n随机产生:处理时间%d， 间隔%d\n", *d, *i);
+	fprintf(fp,"\n随机产生:处理时间%d， 间隔%d\n", *d, *i);
+}
+int Minimum(LinkQueue Q[])  //找出最短队列
+{
+	int l[Qu];
+	int i, k;
+	for(i = 0; i < Qu; i++)
+		l[i] = QueueLength(Q[i]);
+	k = 0;
+	for(i = 1; i < Qu; i++)
+		if(l[i] < l[0])
+		{
+			l[0] = l[i];
+			k = i;
+		}
+		return k;
+}
+void CustomerArrived()  //客户到达
+{
+	QElemType f;
+	int durtime, intertime, i;
+
+	printf("当前时间：%d      ", en.OccurTime);
+	fprintf(fp,"当前时间：%d      ", en.OccurTime);
+	++CustomerNum;
+	Random(&durtime, &intertime);
+	et.OccurTime = en.OccurTime + intertime;
+	et.NType = Qu;
+	printf("当前客户(%d)的处理时间是%d      下一个客户到达的时间是：%d\n",CustomerNum, durtime, et.OccurTime);
+	fprintf(fp,"当前客户(%d)的处理时间是%d      下一个客户到达的时间是：%d\n",CustomerNum, durtime, et.OccurTime);
+	if(et.OccurTime < CloseTime)
+		OrderInsert(&ev, et, cmp);
+	i = Minimum(q);
+	f.ArrivalTime = en.OccurTime;
+	f.Duration = durtime;
+	f.num=CustomerNum;
+	EnQueue(&q[i], f);
+	if(1 == QueueLength(q[i]))
+	{
+		et.OccurTime = en.OccurTime + durtime;
+		et.NType = i;
+		OrderInsert(&ev, et, cmp);
+		printf("离开事件发生时间是：%d      服务窗口为%d号\n\n",  et.OccurTime, et.NType + 1);
+		fprintf(fp,"离开事件发生时间是：%d      服务的窗口为%d号\n\n",  et.OccurTime, et.NType + 1);
+	}
+
+
+   if(et.NType==0)
+    {
+        a1[k1]=CustomerNum;
+        k1++;
+    }
+    if(et.NType==1)
+    {
+
+        a2[k2]=CustomerNum;
+        k2++;
+    }
+    if(et.NType==2)
+    {
+        a3[k3]=CustomerNum;
+        k3++;
+    }
+    if(et.NType==3)
+    {
+        a4[k4]=CustomerNum;
+        k4++;
+    }
+
+
+if(k1==0)
+    {
+        printf("第1窗口还无顾客处理业务");
+    }
+    else
+    {
+        printf("1号窗口排队的顾客序号：");
+        for(int i=CustomerNum0-1;i<k1;i++)
+        {
+            printf("%d  ",a1[i]);
+        }
+
+    }
+    printf("\n\n");
+
+    if(k2==0)
+    {
+        printf("第2窗口还无顾客处理业务");
+    }
+    else
+    {
+        printf("2号窗口排队的顾客序号：");
+        for(int i=CustomerNum1-1;i<k2;i++)
+        {
+            printf("%d  ",a2[i]);
+        }
+
+    }
+    printf("\n\n");
+
+    if(k3==0)
+    {
+        printf("第3窗口还无顾客处理业务");
+    }
+    else
+    {
+        printf("3号窗口排队的顾客序号：");
+        for(int i=CustomerNum2-1;i<k3;i++)
+        {
+            printf("%d  ",a3[i]);
+        }
+
+    }
+    printf("\n\n");
+
+    if(k4==0)
+    {
+        printf("第4窗口还无顾客处理业务");
+    }
+    else
+    {
+        printf("4号窗口排队的顾客序号：");
+        for(int i=CustomerNum3-1;i<k4;i++)
+        {
+            printf("%d  ",a4[i]);
+        }
+
+    }
+    printf("\n\n");
+    printf("\n\n");
+}
+
+
+void CustomerDeparture()  //客户离开
+{
+	int i;
+	i = en.NType;
+	DeQueue(&q[i], &customer);
+	if(i==0)
+    {
+        CustomerNum0++;
+        TotalTime0 += en.OccurTime - customer.ArrivalTime;
+    }
+    if(i==1)
+    {
+        CustomerNum1++;
+        TotalTime1 += en.OccurTime - customer.ArrivalTime;
+    }
+    if(i==2)
+    {
+        CustomerNum2++;
+        TotalTime2 += en.OccurTime - customer.ArrivalTime;
+    }
+    if(i==3)
+    {
+        CustomerNum3++;
+        TotalTime3 += en.OccurTime - customer.ArrivalTime;
+    }
+	if( !QueueEmpty(q[i]) )
+	{
+		GetHead_Q(q[i], &customer);
+		et.OccurTime = en.OccurTime + customer.Duration;
+		et.NType = i;
+		OrderInsert(&ev, et, cmp);
+	}
+}
+
+void Bank_Simulation()  //业务模拟
+{
+	Link p;
+	ElemType t;
+	OpenForDay();
+		while( !ListEmpty(ev) )
+	{
+		DelFirst(&ev, GetHead(ev), &p);
+		t = GetCurElem(p);
+		en.OccurTime = t.OccurTime;
+		en.NType = t.NType;
+		if( Qu == en.NType )
+			CustomerArrived();
+		else
+			CustomerDeparture();
+	}
+
+	printf("\n");
+	printf("窗口1平均耗时:%d分钟, 窗口2平均耗时:%d分钟, 窗口3平均耗时:%d分钟，窗口4平均耗时:%d分钟\n\n",TotalTime0/CustomerNum0, TotalTime1/CustomerNum1, TotalTime2/CustomerNum2, TotalTime3/CustomerNum3);
+	fprintf(fp,"窗口1平均耗时:%d分钟, 窗口2平均耗时:%d分钟, 窗口3平均耗时:%d分钟，窗口4平均耗时:%d分钟\n",TotalTime0/CustomerNum0, TotalTime1/CustomerNum1, TotalTime2/CustomerNum2, TotalTime3/CustomerNum3);
+
+	fclose(fp);
+}
+int main()
+{
+	int i;
+	srand((unsigned)time(NULL));  //随机时间种子
+	Bank_Simulation();
+	DestroyList(&ev);
+
+	for (i = 0; i < Qu; i++)
+		DestroyQueue(&q[i]);
+	return 0;
+}

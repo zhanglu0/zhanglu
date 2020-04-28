@@ -1,0 +1,145 @@
+#include "pch.h"
+#include "CppUnitTest.h"
+
+using namespace Microsoft::VisualStudio::CppUnitTestFramework;
+
+namespace 四则运算测试
+{
+	TEST_CLASS(四则运算测试)
+	{
+	public:
+
+		TEST_METHOD(TestMethod1)
+		{
+			//设置初值
+			Number = 10;  //生成10个算式
+			Type = 5;     //运算类型为加减混合
+			MaxNum = 20;  //最大运算范围为20
+			Bracket = 2;  //不包含括号
+			PerNumber = 3;//算式中最多包含3个数字
+			NeedFloat = 1;//包含小数
+
+			srand((int)time(NULL));  //设置时间种子 ，使得程序每次运行的结果都不同 
+			Produce();
+
+			int i, judge_type, judge_float, judge_bracket, idx, idx2, idx3;
+			for (i = 0; i < Number; i++)
+			{
+				string str = suanshi[i];
+				//0为正确，1为错误
+				idx = str.find("*"); //找str里有没有“*”，没有judge_type 为0，正确；有judge_type 为1，错误；
+				if (idx == string::npos)
+				{
+					judge_type = 0;
+				}
+				else
+				{
+					judge_type = 1;
+					break;
+				}
+				idx = str.find("/");
+				if (idx == string::npos)
+				{
+					judge_type = 0;
+				}
+				else
+				{
+					judge_type = 1;
+					break;
+				}
+
+				idx2 = str.find(".");
+				if (idx2 == string::npos)
+				{
+					judge_float = 1;
+					break;
+				}
+				else
+				{
+					judge_float = 0;
+				}
+
+				idx3 = str.find("(");
+				if (idx3 == string::npos)
+				{
+					judge_bracket = 0;
+				}
+				else
+				{
+					judge_bracket = 1;
+					break;
+				}
+			}
+
+			Assert::AreEqual(judge_type, 0);
+			Assert::AreEqual(judge_float, 0);
+			Assert::AreEqual(judge_bracket, 0);
+		}
+		TEST_METHOD(TestMethod2)
+		{
+			//设置初值
+			Number = 10;  //生成10个算式
+			Type = 6;     //运算类型为乘除混合
+			MaxNum = 50;  //最大运算范围为50
+			Bracket = 1;  //包含括号
+			PerNumber = 4;//算式中最多包含4个数字
+			NeedFloat = 2;//不包含小数
+
+			srand((int)time(NULL));  //设置时间种子 ，使得程序每次运行的结果都不同 
+			Produce();
+
+			int i, judge_type, judge_float, judge_bracket, idx, idx2, idx3;
+			for (i = 0; i < Number; i++)
+			{
+				string str = suanshi[i];
+				//0为正确，1为错误
+				idx = str.find("+"); //找str里有没有“+”，没有judge_type 为0，正确；有judge_type 为1，错误；
+				if (idx == string::npos)
+				{
+					judge_type = 0;
+				}
+				else
+				{
+					judge_type = 1;
+					break;
+				}
+				idx = str.find("-");
+				if (idx == string::npos)
+				{
+					judge_type = 0;
+				}
+				else
+				{
+					judge_type = 1;
+					break;
+				}
+
+				idx2 = str.find(".");
+				if (idx2 == string::npos)
+				{
+					judge_float = 0;
+				}
+				else
+				{
+					judge_float = 1;
+					break;
+				}
+
+				idx3 = str.find("(");
+				if (idx3 == string::npos&&i == Number)
+				{
+					judge_bracket = 1;
+					break;
+				}
+				else
+				{
+					judge_bracket = 0;
+				}
+			}
+
+			Assert::AreEqual(judge_type, 0);
+			Assert::AreEqual(judge_float, 0);
+			Assert::AreEqual(judge_bracket, 0);
+		}
+	};
+}
